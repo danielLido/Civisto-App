@@ -1,552 +1,827 @@
 <template>
   <ion-page>
-    <ion-header>
-      <ion-toolbar>
-        <ion-buttons slot="start">
-          <ion-back-button default-href="/"></ion-back-button>
-        </ion-buttons>
-        <ion-title>Achieve Something</ion-title>
-      </ion-toolbar>
+    <!-- Header -->
+    <ion-header class="ion-no-border">
+      <div class="header-container">
+        <div class="header-content">
+          <ion-button fill="clear" class="back-button" router-link="/tabs/home">
+            <ion-icon :icon="arrowBackOutline" slot="icon-only"></ion-icon>
+          </ion-button>
+          <div class="header-text">
+            <h1 class="header-title">Your Superhero Journey</h1>
+            <p class="header-subtitle">Celebrate your impact • Unlock new achievements!</p>
+          </div>
+        </div>
+        
+        <!-- Segment Tabs -->
+        <div class="segment-container">
+          <div 
+            class="segment-button" 
+            :class="{ 'active': activeTab === 'badges' }"
+            @click="activeTab = 'badges'"
+          >
+            Badges
+          </div>
+          <div 
+            class="segment-button" 
+            :class="{ 'active': activeTab === 'stats' }"
+            @click="activeTab = 'stats'"
+          >
+            Stats
+          </div>
+        </div>
+      </div>
     </ion-header>
 
-    <ion-content class="ion-padding">
-      <div class="container">
-        <h1>My Achievements</h1>
-        <p class="subtitle">Track your progress and earn rewards for your community contributions</p>
-        
-        <ion-card class="level-card">
-          <ion-card-content>
-            <div class="level-info">
-              <div class="citizen-level">Citizen Level 2</div>
-              <div class="points-badge">350 points</div>
+    <ion-content>
+      <!-- Achievement Stats Summary -->
+      <div class="stats-summary">
+        <div class="summary-item">
+          <div class="summary-value earned">{{ earnedBadges }}</div>
+          <div class="summary-label">Earned</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <div class="summary-value in-progress">{{ inProgressBadges }}</div>
+          <div class="summary-label">In Progress</div>
+        </div>
+        <div class="summary-divider"></div>
+        <div class="summary-item">
+          <div class="summary-value total">42</div>
+          <div class="summary-label">Total Available</div>
+        </div>
+      </div>
+      
+      <!-- Badges Content -->
+      <div v-if="activeTab === 'badges'" class="badges-grid">
+        <div 
+          v-for="badge in achievements.badges" 
+          :key="badge.id" 
+          class="badge-card"
+          :class="{ 'completed': badge.completed }"
+        >
+          <div 
+            class="badge-icon-container" 
+            :class="[badge.iconBgClass, {'grayscale': !badge.completed}]"
+          >
+            <ion-icon :icon="getIconByName(badge.iconName)" class="badge-icon"></ion-icon>
+            <div v-if="badge.completed" class="completed-mark">
+              <ion-icon :icon="happyOutline" class="completed-icon"></ion-icon>
             </div>
-            <div class="next-level">
-              <div>Next level: 150 points away</div>
-              <div>350/500</div>
-            </div>
+          </div>
+          
+          <div class="badge-title">{{ badge.title }}</div>
+          <div class="badge-description">{{ badge.description }}</div>
+          
+          <div v-if="badge.completed" class="badge-earned">
+            Earned {{ badge.dateEarned }}
+          </div>
+          <div v-else class="badge-progress">
             <div class="progress-bar">
-              <div class="progress-fill" :style="{ width: '70%' }"></div>
+              <div class="progress-fill" :style="{ width: badge.progress + '%' }"></div>
             </div>
-            <div class="level-indicators">
-              <div class="level-indicator">
-                <ion-icon :icon="arrowForward" class="indicator-icon active"></ion-icon>
-                <div class="indicator-level">1</div>
-              </div>
-              <div class="level-indicator">
-                <ion-icon :icon="medal" class="indicator-icon active"></ion-icon>
-                <div class="indicator-level">2</div>
-              </div>
-              <div class="level-indicator">
-                <ion-icon :icon="star" class="indicator-icon inactive"></ion-icon>
-                <div class="indicator-level">3</div>
-              </div>
-              <div class="level-indicator">
-                <ion-icon :icon="trophy" class="indicator-icon inactive"></ion-icon>
-                <div class="indicator-level">4</div>
-              </div>
-              <div class="level-indicator">
-                <ion-icon :icon="sparkles" class="indicator-icon inactive"></ion-icon>
-                <div class="indicator-level">5</div>
-              </div>
-            </div>
-          </ion-card-content>
-        </ion-card>
-        
-        <ion-segment v-model="selectedTab">
-          <ion-segment-button value="badges">
-            <ion-label>Badges</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="challenges">
-            <ion-label>Challenges</ion-label>
-          </ion-segment-button>
-          <ion-segment-button value="rewards">
-            <ion-label>Rewards</ion-label>
-          </ion-segment-button>
-        </ion-segment>
-        
-        <!-- Badges Content -->
-        <div v-if="selectedTab === 'badges'" class="badges-grid">
-          <ion-card v-for="(badge, index) in badges" :key="index" class="badge-card">
-            <div :class="['badge-icon', !badge.earned && 'inactive']">
-              <ion-icon :icon="badge.icon" size="medium"></ion-icon>
-            </div>
-            <div class="badge-title">{{ badge.title }}</div>
-            <div class="badge-description">{{ badge.description }}</div>
-            <div v-if="badge.earned" class="badge-earned">
-              <ion-icon :icon="checkmark" size="small"></ion-icon>
-              Earned {{ badge.earnedDate }}
-            </div>
-          </ion-card>
+            <div class="progress-text">{{ badge.progress }}% complete</div>
+          </div>
+        </div>
+      </div>
+      
+      <!-- Stats Content -->
+      <div v-if="activeTab === 'stats'" class="stats-container">
+        <!-- Stat Items -->
+        <div 
+          v-for="stat in achievements.stats" 
+          :key="stat.id" 
+          class="stat-card"
+        >
+          <div class="stat-icon-container" :class="stat.iconBgClass">
+            <ion-icon :icon="getIconByName(stat.iconName)" class="stat-icon"></ion-icon>
+          </div>
+          <div class="stat-details">
+            <div class="stat-title">{{ stat.title }}</div>
+            <div class="stat-value">{{ stat.value }}</div>
+            <div class="stat-description">{{ stat.description }}</div>
+          </div>
         </div>
         
-        <!-- Challenges Content -->
-        <div v-if="selectedTab === 'challenges'">
-          <ion-card v-for="(challenge, index) in challenges" :key="index" class="challenge-card">
-            <ion-card-content>
-              <div class="challenge-header">
-                <div class="challenge-icon-title">
-                  <div class="challenge-icon">
-                    <ion-icon :icon="challenge.icon" size="small"></ion-icon>
-                  </div>
-                  <div class="challenge-title">{{ challenge.title }}</div>
-                </div>
-                <div class="challenge-points">+{{ challenge.points }} pts</div>
+        <!-- Monthly Impact Section -->
+        <div class="monthly-impact">
+          <h3 class="impact-title">Monthly Impact</h3>
+          <div class="impact-card">
+            <div class="impact-month">
+              <div class="month-header">
+                <div class="month-name">April 2025</div>
+                <div class="month-value">12 reports</div>
               </div>
-              <div class="challenge-description">{{ challenge.description }}</div>
-              <div class="challenge-progress-bar">
-                <div class="challenge-progress-fill" :style="{ width: challenge.progress + '%' }"></div>
+              <div class="month-progress-bar">
+                <div class="month-progress-fill" style="width: 80%"></div>
               </div>
-              <div class="challenge-progress-text">{{ challenge.current }}/{{ challenge.total }}</div>
-            </ion-card-content>
-          </ion-card>
+            </div>
+            
+            <div class="impact-month">
+              <div class="month-header">
+                <div class="month-name">March 2025</div>
+                <div class="month-value">8 reports</div>
+              </div>
+              <div class="month-progress-bar">
+                <div class="month-progress-fill" style="width: 55%"></div>
+              </div>
+            </div>
+            
+            <div class="impact-month">
+              <div class="month-header">
+                <div class="month-name">February 2025</div>
+                <div class="month-value">5 reports</div>
+              </div>
+              <div class="month-progress-bar">
+                <div class="month-progress-fill" style="width: 35%"></div>
+              </div>
+            </div>
+          </div>
         </div>
-        
-        <!-- Rewards Content -->
-        <div v-if="selectedTab === 'rewards'" class="rewards-coming-soon">
-          <p>Rewards section coming soon!</p>
+      </div>
+      
+      <!-- Next Badge Teaser -->
+      <div class="next-badge-container">
+        <div class="next-badge-card">
+          <div class="next-badge-icon">
+            <ion-icon :icon="heartOutline"></ion-icon>
+          </div>
+          <div class="next-badge-details">
+            <div class="next-badge-title">Next Badge: Community Champion</div>
+            <div class="next-badge-description">Report issues in 10 different locations to unlock</div>
+          </div>
+          <div class="next-badge-progress">3/10</div>
         </div>
       </div>
     </ion-content>
-    
   </ion-page>
 </template>
 
 <script>
-import { 
-  IonPage, 
-  IonContent, 
-  IonCard, 
-  IonCardContent, 
-  IonSegment, 
-  IonSegmentButton, 
-  IonLabel, 
-  IonIcon, 
-  IonTabs, 
-  IonTabBar, 
-  IonTabButton,
-  IonRouterOutlet
+import { defineComponent, ref, computed } from 'vue';
+import {
+  IonPage,
+  IonHeader,
+  IonContent,
+  IonButton,
+  IonIcon,
 } from '@ionic/vue';
-import { 
-  arrowForward, 
-  medal, 
-  star, 
-  trophy, 
-  sparkles, 
-  checkmark, 
-  home, 
-  document, 
-  person,
-  globe,
-  shield
+import {
+  arrowBackOutline,
+  shieldOutline,
+  trophyOutline,
+  starOutline,
+  flashOutline,
+  stopwatchOutline,
+  ribbonOutline,
+  heartOutline,
+  happyOutline
 } from 'ionicons/icons';
-import { defineComponent, ref } from 'vue';
 
 export default defineComponent({
   name: 'AchievementsPage',
   components: {
-    IonPage, 
-    IonContent, 
-    IonCard, 
-    IonCardContent, 
-    IonSegment, 
-    IonSegmentButton, 
-    IonLabel, 
-    IonIcon, 
-    IonTabs, 
-    IonTabBar, 
-    IonTabButton,
-    IonRouterOutlet
+    IonPage,
+    IonHeader,
+    IonContent,
+    IonButton,
+    IonIcon,
   },
   setup() {
-    const selectedTab = ref('badges');
+    const activeTab = ref('badges');
     
-    const badges = [
-      {
-        icon: arrowForward,
-        title: 'First Report',
-        description: 'Submit your first maintenance report',
-        earned: true,
-        earnedDate: 'Feb 12'
-      },
-      {
-        icon: medal,
-        title: 'Civic Watchdog',
-        description: 'Submit 5 verified reports',
-        earned: true,
-        earnedDate: 'Mar 20'
-      },
-      {
-        icon: globe,
-        title: 'Community Voice',
-        description: 'Get 10+ votes on your reports',
-        earned: false
-      },
-      {
-        icon: trophy,
-        title: 'Problem Solver',
-        description: 'Have 3 reports addressed & fixed',
-        earned: false
-      },
-      {
-        icon: star,
-        title: 'Town Guardian',
-        description: 'Report issues in 3 different categories',
-        earned: true,
-        earnedDate: 'Apr 1'
-      },
-      {
-        icon: document,
-        title: 'Consistency King',
-        description: 'Submit reports 3 weeks in a row',
-        earned: false
-      }
-    ];
+    // Sample achievements data
+    const achievements = {
+      badges: [
+        {
+          id: 1,
+          title: "Community Guardian",
+          description: "Report issues in 5 different categories",
+          iconName: "shieldOutline",
+          iconBgClass: "bg-blue",
+          progress: 100,
+          completed: true,
+          dateEarned: "Apr 26, 2025"
+        },
+        {
+          id: 2,
+          title: "First Victory",
+          description: "Get your first issue resolved",
+          iconName: "trophyOutline",
+          iconBgClass: "bg-yellow",
+          progress: 100,
+          completed: true,
+          dateEarned: "Apr 15, 2025"
+        },
+        {
+          id: 3,
+          title: "Neighborhood Hero",
+          description: "Help resolve 10 community issues",
+          iconName: "starOutline",
+          iconBgClass: "bg-purple",
+          progress: 60,
+          completed: false,
+          dateEarned: null
+        },
+        {
+          id: 4,
+          title: "Rapid Responder",
+          description: "Report 3 issues within 24 hours",
+          iconName: "flashOutline",
+          iconBgClass: "bg-orange",
+          progress: 33,
+          completed: false,
+          dateEarned: null
+        },
+        {
+          id: 5,
+          title: "Cleanup Champion",
+          description: "Report 5 waste management issues",
+          iconName: "ribbonOutline",
+          iconBgClass: "bg-teal",
+          progress: 40,
+          completed: false,
+          dateEarned: null
+        },
+        {
+          id: 6,
+          title: "Road Warrior",
+          description: "Get 3 street issues fixed",
+          iconName: "ribbonOutline",
+          iconBgClass: "bg-red",
+          progress: 66,
+          completed: false,
+          dateEarned: null
+        }
+      ],
+      stats: [
+        {
+          id: 1,
+          title: "City Rank",
+          value: "#12",
+          description: "Among 5,243 users in your city",
+          iconName: "trophyOutline",
+          iconBgClass: "bg-yellow"
+        },
+        {
+          id: 2,
+          title: "Issues Reported",
+          value: "27",
+          description: "Top 5% of all reporters",
+          iconName: "ribbonOutline",
+          iconBgClass: "bg-blue"
+        },
+        {
+          id: 3,
+          title: "Successful Fixes",
+          value: "16",
+          description: "59% success rate",
+          iconName: "shieldOutline",
+          iconBgClass: "bg-green"
+        },
+        {
+          id: 4,
+          title: "Streaks",
+          value: "12 days",
+          description: "Current reporting streak",
+          iconName: "flashOutline",
+          iconBgClass: "bg-orange"
+        }
+      ]
+    };
     
-    const challenges = [
-      {
-        icon: arrowForward,
-        title: 'Spring Cleaning',
-        description: 'Report 5 cleanliness issues this month',
-        points: 50,
-        current: 3,
-        total: 5,
-        progress: 60
-      },
-      {
-        icon: globe,
-        title: 'Neighborhood Watch',
-        description: 'Submit reports in 3 different neighborhoods',
-        points: 75,
-        current: 3,
-        total: 3,
-        progress: 100
-      },
-      {
-        icon: shield,
-        title: 'Safety First',
-        description: 'Report 3 safety hazards',
-        points: 100,
-        current: 1,
-        total: 3,
-        progress: 33.3
-      }
-    ];
+    // Count earned and in-progress badges
+    const earnedBadges = computed(() => {
+      return achievements.badges.filter(badge => badge.completed).length;
+    });
+    
+    const inProgressBadges = computed(() => {
+      return achievements.badges.filter(badge => !badge.completed).length;
+    });
+    
+    // Helper function to get the correct icon
+    const getIconByName = (iconName) => {
+      const icons = {
+        shieldOutline,
+        trophyOutline,
+        starOutline,
+        flashOutline,
+        stopwatchOutline,
+        ribbonOutline,
+        heartOutline
+      };
+      return icons[iconName];
+    };
     
     return {
-      selectedTab,
-      badges,
-      challenges,
+      activeTab,
+      achievements,
+      earnedBadges,
+      inProgressBadges,
+      getIconByName,
+      
       // Icons
-      arrowForward,
-      medal,
-      star,
-      trophy,
-      sparkles,
-      checkmark,
-      home,
-      document,
-      person,
-      globe,
-      shield
+      arrowBackOutline,
+      shieldOutline,
+      trophyOutline,
+      starOutline,
+      flashOutline,
+      stopwatchOutline,
+      ribbonOutline,
+      heartOutline,
+      happyOutline
     };
   }
 });
 </script>
 
 <style>
-/* Achievements.css */
+/* Achievements Page Styles */
 :root {
-  --ion-color-primary: #28a745;
-  --ion-color-primary-rgb: 40, 167, 69;
-  --ion-color-primary-contrast: #ffffff;
-  --ion-color-primary-contrast-rgb: 255, 255, 255;
-  --ion-color-primary-shade: #23933d;
-  --ion-color-primary-tint: #3eb058;
+  --primary: #22c55e;
+  --primary-gradient: linear-gradient(to right, #22c55e, #16a34a);
+  --text-dark: #111827;
+  --text-medium: #6b7280;
+  --text-light: #9ca3af;
   
-  --ion-color-light: #f8f9fa;
-  --ion-color-light-rgb: 248, 249, 250;
-  --ion-color-light-contrast: #000000;
-  --ion-color-light-contrast-rgb: 0, 0, 0;
-  --ion-color-light-shade: #dadddf;
-  --ion-color-light-tint: #f9fafb;
+  --blue-gradient: linear-gradient(to bottom right, #60a5fa, #3b82f6);
+  --yellow-gradient: linear-gradient(to bottom right, #fbbf24, #d97706);
+  --purple-gradient: linear-gradient(to bottom right, #a78bfa, #7c3aed);
+  --orange-gradient: linear-gradient(to bottom right, #fb923c, #ea580c);
+  --teal-gradient: linear-gradient(to bottom right, #2dd4bf, #0d9488);
+  --red-gradient: linear-gradient(to bottom right, #f87171, #dc2626);
+  --green-gradient: linear-gradient(to bottom right, #4ade80, #16a34a);
   
-  --ion-color-medium: #6c757d;
-  --ion-color-medium-rgb: 108, 117, 125;
-  --ion-color-medium-contrast: #ffffff;
-  --ion-color-medium-contrast-rgb: 255, 255, 255;
-  --ion-color-medium-shade: #5f666e;
-  --ion-color-medium-tint: #7b848a;
-  
-  --primary-light: #e5f7ec;
-  --gray-light: #F2F2F2;
-  --gray: #e9ecef;
+  --next-badge-gradient: linear-gradient(to right, #8b5cf6, #6366f1);
 }
 
-/* Global Styles */
-* {
-  font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, 'Open Sans', 'Helvetica Neue', sans-serif;
+/* Header Styles */
+.header-container {
+  background: var(--primary-gradient);
+  padding: 2rem 1rem 1rem 1rem;
+  border-bottom-left-radius: 1.5rem;
+  border-bottom-right-radius: 1.5rem;
+  color: white;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
 }
 
-ion-content {
-  --background: var(--ion-color-light);
+.header-content {
+  display: flex;
+  align-items: flex-start;
+  margin-bottom: 1.5rem;
 }
 
-h1 {
-  font-size: 28px;
+.back-button {
+  --color: white;
+  --background: rgba(255, 255, 255, 0.2);
+  --border-radius: 50%;
+  --padding-start: 8px;
+  --padding-end: 8px;
+  --padding-top: 8px;
+  --padding-bottom: 8px;
+  height: 36px;
+  width: 36px;
+  margin: 0 10px 0 0;
+}
+
+.header-text {
+  flex: 1;
+}
+
+.header-title {
+  font-size: 1.25rem;
   font-weight: 700;
+  margin: 0 0 4px 0;
+}
+
+.header-subtitle {
+  font-size: 0.875rem;
+  opacity: 0.9;
+  margin: 0;
+}
+
+/* Segment Tabs */
+.segment-container {
+  display: flex;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  padding: 4px;
   margin-bottom: 8px;
-  color: var(--ion-color-dark);
 }
 
-.container {
-  max-width: 650px;
-  margin: 0 auto;
-  padding-bottom: 70px;
+.segment-button {
+  flex: 1;
+  text-align: center;
+  padding: 8px 0;
+  border-radius: 0.625rem;
+  font-size: 0.875rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+  cursor: pointer;
 }
 
-.subtitle {
-  font-size: 16px;
-  font-weight: 400;
-  color: var(--ion-color-medium);
-  margin-bottom: 24px;
+.segment-button.active {
+  background-color: white;
+  color: var(--primary);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
 }
 
-/* Level Card */
-.level-card {
-  margin-bottom: 24px;
-  box-shadow: none;
-  border: 1px solid var(--gray);
-}
-
-.level-info {
+/* Stats Summary */
+.stats-summary {
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  margin-bottom: 4px;
+  background: white;
+  margin: -1rem 1rem 1.5rem 1rem;
+  border-radius: 0.75rem;
+  padding: 1rem;
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
 }
 
-.citizen-level {
-  font-size: 18px;
+.summary-item {
+  text-align: center;
+  flex: 1;
+  padding: 0.25rem 0;
+}
+
+.summary-value {
+  font-size: 1.25rem;
   font-weight: 700;
+  margin-bottom: 0.25rem;
 }
 
-.points-badge {
-  background-color: var(--ion-color-primary);
+.summary-value.earned {
+  color: var(--primary);
+}
+
+.summary-value.in-progress {
+  color: #3b82f6;
+}
+
+.summary-value.total {
+  color: #8b5cf6;
+}
+
+.summary-label {
+  font-size: 0.75rem;
+  color: var(--text-medium);
+}
+
+.summary-divider {
+  width: 1px;
+  height: 2.5rem;
+  background-color: #f3f4f6;
+  margin: 0.25rem 0;
+}
+
+/* Badges Grid */
+.badges-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  padding: 0 1rem 1rem 1rem;
+}
+
+.badge-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+  opacity: 0.8;
+}
+
+.badge-card.completed {
+  opacity: 1;
+  border: 1px solid rgba(34, 197, 94, 0.2);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.08);
+}
+
+.badge-icon-container {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-bottom: 0.75rem;
+  position: relative;
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.15);
+}
+
+.badge-icon {
   color: white;
-  padding: 4px 10px;
-  border-radius: 16px;
-  font-size: 14px;
+  font-size: 1.75rem;
+}
+
+.badge-icon-container.grayscale {
+  filter: grayscale(0.8);
+  opacity: 0.7;
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.completed-mark {
+  position: absolute;
+  bottom: 0;
+  right: 0;
+  background: white;
+  width: 1.5rem;
+  height: 1.5rem;
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: 2px solid var(--primary);
+}
+
+.completed-icon {
+  color: var(--primary);
+  font-size: 0.875rem;
+}
+
+.badge-title {
+  font-size: 0.875rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.badge-description {
+  font-size: 0.75rem;
+  color: var(--text-medium);
+  margin-bottom: 0.75rem;
+  line-height: 1.3;
+}
+
+.badge-earned {
+  font-size: 0.75rem;
+  color: var(--primary);
   font-weight: 500;
 }
 
-.next-level {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  margin-bottom: 8px;
-  font-size: 14px;
-  color: var(--ion-color-medium);
+.badge-progress {
+  width: 100%;
 }
 
 .progress-bar {
-  height: 8px;
-  background-color: var(--gray-light);
-  border-radius: 4px;
-  margin-bottom: 16px;
+  height: 0.375rem;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
   overflow: hidden;
+  margin-bottom: 0.25rem;
 }
 
 .progress-fill {
   height: 100%;
-  background-color: var(--ion-color-primary);
-  border-radius: 4px;
+  background: var(--primary-gradient);
+  border-radius: 9999px;
 }
 
-.level-indicators {
+.progress-text {
+  font-size: 0.75rem;
+  color: var(--text-light);
+}
+
+/* Stats Styles */
+.stats-container {
+  padding: 0 1rem;
+}
+
+.stat-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  margin-bottom: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.stat-icon-container {
+  width: 4rem;
+  height: 4rem;
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
+}
+
+.stat-icon {
+  color: white;
+  font-size: 1.75rem;
+}
+
+.stat-details {
+  flex: 1;
+}
+
+.stat-title {
+  font-size: 0.875rem;
+  color: var(--text-medium);
+  margin-bottom: 0.25rem;
+}
+
+.stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  color: var(--text-dark);
+  margin-bottom: 0.25rem;
+}
+
+.stat-description {
+  font-size: 0.75rem;
+  color: var(--text-medium);
+}
+
+/* Monthly Impact */
+.monthly-impact {
+  margin-top: 1.5rem;
+  margin-bottom: 1.5rem;
+}
+
+.impact-title {
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--text-dark);
+  margin-bottom: 0.75rem;
+}
+
+.impact-card {
+  background: white;
+  border-radius: 1rem;
+  padding: 1rem;
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.05);
+}
+
+.impact-month {
+  margin-bottom: 1rem;
+}
+
+.impact-month:last-child {
+  margin-bottom: 0;
+}
+
+.month-header {
   display: flex;
   justify-content: space-between;
-  margin-bottom: 10px;
+  margin-bottom: 0.25rem;
 }
 
-.level-indicator {
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  gap: 4px;
+.month-name {
+  font-size: 0.75rem;
+  color: var(--text-medium);
 }
 
-.indicator-icon {
-  width: 24px;
-  height: 24px;
-  color: var(--ion-color-primary);
-}
-
-.indicator-icon.inactive {
-  color: #ccc;
-}
-
-.indicator-level {
-  font-size: 12px;
-  color: var(--ion-color-medium);
-}
-
-/* Segment/Tabs */
-ion-segment {
-  margin-bottom: 20px;
-}
-
-ion-segment-button {
-  --color: var(--ion-color-medium);
-  --color-checked: var(--ion-color-primary);
-  --indicator-color: var(--ion-color-primary);
-}
-
-/* Badges Section */
-.badges-grid {
-  display: grid;
-  grid-template-columns: repeat(2, 1fr);
-  gap: 16px;
-  margin-bottom: 20px;
-}
-
-.badge-card {
-  border: 1px solid var(--gray);
-  border-radius: 8px;
-  padding: 16px;
-  display: flex;
-  flex-direction: column;
-  align-items: center;
-  text-align: center;
-  margin: 0;
-  box-shadow: none;
-}
-
-.badge-icon {
-  width: 48px;
-  height: 48px;
-  background-color: var(--ion-color-primary);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  margin-bottom: 12px;
-  color: white;
-}
-
-.badge-icon.inactive {
-  background-color: var(--gray-light);
-  color: var(--ion-color-medium);
-}
-
-.badge-title {
-  font-size: 16px;
-  font-weight: 600;
-  margin-bottom: 4px;
-}
-
-.badge-description {
-  font-size: 12px;
-  color: var(--ion-color-medium);
-  margin-bottom: 8px;
-}
-
-.badge-earned {
-  font-size: 12px;
-  color: var(--ion-color-primary);
-  display: flex;
-  align-items: center;
-  gap: 4px;
-}
-
-/* Challenges Section */
-.challenge-card {
-  margin-bottom: 16px;
-  border: 1px solid var(--gray);
-  border-radius: 8px;
-  box-shadow: none;
-}
-
-.challenge-header {
-  display: flex;
-  justify-content: space-between;
-  margin-bottom: 8px;
-}
-
-.challenge-icon-title {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-}
-
-.challenge-icon {
-  width: 32px;
-  height: 32px;
-  background-color: var(--ion-color-primary);
-  border-radius: 50%;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  color: white;
-}
-
-.challenge-title {
-  font-size: 16px;
-  font-weight: 600;
-}
-
-.challenge-points {
-  color: var(--ion-color-primary);
+.month-value {
+  font-size: 0.75rem;
+  color: var(--primary);
   font-weight: 500;
 }
 
-.challenge-description {
-  font-size: 14px;
-  color: var(--ion-color-medium);
-  margin-bottom: 12px;
-}
-
-.challenge-progress-bar {
-  height: 8px;
-  background-color: var(--gray-light);
-  border-radius: 4px;
-  margin-bottom: 4px;
+.month-progress-bar {
+  height: 0.625rem;
+  background-color: #f3f4f6;
+  border-radius: 9999px;
   overflow: hidden;
 }
 
-.challenge-progress-fill {
+.month-progress-fill {
   height: 100%;
-  background-color: var(--ion-color-primary);
-  border-radius: 4px;
+  background: var(--primary-gradient);
+  border-radius: 9999px;
 }
 
-.challenge-progress-text {
-  text-align: right;
-  font-size: 12px;
-  color: var(--ion-color-medium);
+/* Next Badge Teaser */
+.next-badge-container {
+  padding: 0 1rem 4rem 1rem;
 }
 
-/* Rewards Coming Soon */
-.rewards-coming-soon {
-  text-align: center;
-  padding: 40px 0;
-  color: var(--ion-color-medium);
+.next-badge-card {
+  background: var(--next-badge-gradient);
+  border-radius: 1rem;
+  padding: 1rem;
+  display: flex;
+  align-items: center;
+  color: white;
+  box-shadow: 0 4px 12px rgba(107, 70, 193, 0.2);
 }
 
-/* Tab Bar */
-ion-tab-bar {
-  --background: #fff;
-  border-top: 1px solid var(--gray);
+.next-badge-icon {
+  width: 3.5rem;
+  height: 3.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 0.75rem;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  margin-right: 1rem;
+  flex-shrink: 0;
 }
 
-ion-tab-button {
-  --color: var(--ion-color-medium);
-  --color-selected: var(--ion-color-primary);
+.next-badge-icon ion-icon {
+  font-size: 1.75rem;
 }
 
-/* Responsive adjustments for smaller screens */
-@media (max-width: 576px) {
+.next-badge-details {
+  flex: 1;
+}
+
+.next-badge-title {
+  font-size: 0.875rem;
+  font-weight: 500;
+  margin-bottom: 0.25rem;
+}
+
+.next-badge-description {
+  font-size: 0.75rem;
+  opacity: 0.8;
+}
+
+.next-badge-progress {
+  width: 2.5rem;
+  height: 2.5rem;
+  background-color: rgba(255, 255, 255, 0.2);
+  border-radius: 50%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 0.75rem;
+  font-weight: 700;
+  margin-left: 0.5rem;
+  flex-shrink: 0;
+}
+
+/* Background colors for icons */
+.bg-blue {
+  background: var(--blue-gradient);
+}
+
+.bg-yellow {
+  background: var(--yellow-gradient);
+}
+
+.bg-purple {
+  background: var(--purple-gradient);
+}
+
+.bg-orange {
+  background: var(--orange-gradient);
+}
+
+.bg-teal {
+  background: var(--teal-gradient);
+}
+
+.bg-red {
+  background: var(--red-gradient);
+}
+
+.bg-green {
+  background: var(--green-gradient);
+}
+
+/* Responsive adjustments */
+@media (min-width: 480px) {
   .badges-grid {
-    grid-template-columns: 1fr;
+    grid-template-columns: repeat(3, 1fr);
+  }
+}
+
+@media (min-width: 768px) {
+  .badges-grid {
+    grid-template-columns: repeat(4, 1fr);
+  }
+  
+  .stats-container, 
+  .badges-grid, 
+  .next-badge-container,
+  .stats-summary {
+    max-width: 650px;
+    margin-left: auto;
+    margin-right: auto;
+  }
+}
+
+@media (max-width: 359px) {
+  .stats-summary {
+    padding: 0.75rem 0.5rem;
+  }
+  
+  .summary-value {
+    font-size: 1rem;
+  }
+  
+  .badge-icon-container {
+    width: 3.5rem;
+    height: 3.5rem;
+  }
+  
+  .badge-icon {
+    font-size: 1.5rem;
   }
 }
 </style>
